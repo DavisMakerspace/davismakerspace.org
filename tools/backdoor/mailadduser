@@ -1,0 +1,16 @@
+#!/bin/sh
+set -euf -o pipefail
+[[ "$(/usr/bin/id -u)" == "0" ]] || exec sudo "$0" "$@"
+
+creds_file=/run/opensmtpd-tables/creds
+
+user=$(echo "$1" | tr -cd 'a-zA-Z0-9_.-')
+
+if (grep "^$user " "$creds_file" &>/dev/null); then
+  echo "Mail user $user already exists." >&2
+  exit 1
+fi
+
+echo "$user *" >>"$creds_file"
+mailupdateusers
+echo "Mail user $user added."

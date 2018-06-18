@@ -1,0 +1,9 @@
+#!/bin/sh
+set -euf -o pipefail
+[[ "$(/usr/bin/id -u)" == "0" ]] || exec sudo "$0" "$@"
+
+creds_file=/run/opensmtpd-tables/creds
+users_db=/run/opensmtpd-tables/users.db
+
+sed -r 's/^([^ ]+).*$/\1 \1@davismakerspace.org/' "$creds_file" | makemap -o "$users_db" -
+smtpctl update table users

@@ -1,0 +1,25 @@
+#!/bin/sh
+set -euf -o pipefail
+
+mkdir -p /run/mysqld
+chown mysql:mysql /run/mysqld
+
+DATADIR=/var/lib/mysql
+
+if [[ "$(find "$DATADIR" -maxdepth 1 -type d | wc -l)" == 1 ]]; then
+  mysql_install_db --user=mysql --datadir="$DATADIR" --skip-auth-anonymous-user
+  mysqld --user=mysql --datadir="$DATADIR" & pid=$?
+  while [[ ! -S /run/mysqld/mysqld.sock ]]; do sleep 0.1; done
+  echo "
+    DROP DATABASE test;
+    INSTALL PLUGIN unix_socket SONAME 'auth_socket';
+    DELETE FROM mysql.user WHERE User='root' AND HOST != 'localhost';
+    UPDATE mysql.user SET plugin = 'unix_socket' WHERE User='root';
+    FLUSH PRIVILEGES;
+  " | mysql
+  mysqladmin -u root password "$(head -c 24 /dev/urandom | base64)"
+  kill $pid
+  wait
+fi
+
+exec mysqld --user=mysql --datadir="$DATADIR" --skip-networking

@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+#
+# A manual auth/cleanup hook script for certbot to use the DNS challenge via Linode DNS.
+# It assumes a file named `vultr-api-key` lives next to it to provide the Linode API key
+# with sufficient privileges to alter DNS entries.
+#
+# An initial `certonly` call might look like:
+#
+#   certbot certonly --preferred-challenges dns --manual --manual-auth-hook /path/to/this-script --manual-cleanup-hook /path/to/this-script
+#
+# Be sure to use the permanent location of this script, as it will be stored for use
+# during renewal.
+#
+
+import dns.resolver
+import json
+import os
+import requests
+import time
+
+
+DOMAINS_URL = 'https://api.linode.com/v4/domains'
+
+
+with open('/run/secrets/linode-api-token', 'r') as f:
+  api_key = f.read().strip()
+
+domain_elems = os.environ['CERTBOT_DOMAIN'].split('.')
+
+domain = '.'.join(domain_elems[-2:])
+sub = '.'.join(domain_elems[:-2])
+name = '_acme-challenge' + ('.'+sub if sub!='' else '')
+
+res = requests.get(
+  url=DOMAINS_URL,
+  headers={
+    'Authorization': 'Bearer ' + api_key,
+    'X-Filter': json.dumps({'domain': domain})
+  },
+)
+res.raise_for_status()
+domain_url = DOMAINS_URL + '/' + str(res.json()['data'][0]['id'])
+
+if 'CERTBOT_AUTH_OUTPUT' not in os.environ:  # auth hook
+
+  # Add the TXT record needed for validation.
+  requests.post(
+    url=domain_url+'/records',
+    headers={'Authorization': 'Bearer ' + api_key},
+    json={
+      'type': 'TXT',
+      'name': name,
+      'target': os.environ['CERTBOT_VALIDATION'],
+    },
+  ).raise_for_status()
+
+  # Wait for TXT record to appear.
+  expected_txt_data = '"' + os.environ['CERTBOT_VALIDATION'] + '"'
+  dns_resolver = dns.resolver.Resolver()
+  dns_resolver.nameservers = ['8.8.8.8']
+  while True:
+    responses = []
+    try:
+      responses = dns_resolver.query(name+'.'+domain, 'TXT')
+    except dns.resolver.NXDOMAIN as e:
+      pass
+    if expected_txt_data in [str(r) for r in responses]:
+      break
+    time.sleep(60)
+
+else:  # cleanup hook
+
+  # Delete the TXT record, via finding its id.
+  res = requests.get(
+    url=domain_url+'/records',
+    headers={
+      'Authorization': 'Bearer ' + api_key,
+      'X-Filter': json.dumps({'type': 'TXT', 'name': name})
+    },
+  )
+  res.raise_for_status()
+  for record in res.json()['data']:
+    requests.delete(
+      url=domain_url+'/records/'+str(record['id']),
+      headers={'Authorization': 'Bearer ' + api_key},
+    ).raise_for_status()

@@ -1,0 +1,205 @@
+version: '3.6'
+
+
+x-php-version: &php-version
+  php_version: 7.2.7
+  php_xz_sha256: eb01c0153b3baf1f64b8b044013ce414b52fede222df3f509e8ff209478f31f0
+
+
+# Common configuration for the services that make up Mailman 2.
+x-mailman2-common: &mailman2-common
+  image: mailman2
+  build: builds/mailman2
+  volumes:
+    - ./volumes/mailman:/run/mailman
+    - ./volumes/mailman-spool/:/var/spool/smtpd/
+  networks:
+    - listserv
+  restart: always
+
+
+services:
+
+  # The public-facing web server, responsible for providing an HTTPS
+  # reverse-proxy to other internal web services.
+  nginx:
+    image: nginx:1.15-alpine
+    volumes:
+      - ./conf/nginx-http.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./volumes/certs/davismakerspace.org:/run/certs:ro
+      - ./volumes/www:/run/www:ro
+      - net-wordpress-nginx:/run/wordpress-nginx:ro
+    networks:
+      - www
+      - listserv
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: always
+
+  # OpenSMTPD is used as the public-facing email server.
+  opensmtpd:
+    build: builds/opensmtpd
+    read_only: true
+    volumes:
+      - net-opensmtpd-ctl:/run
+      - ./conf/opensmtpd.conf:/etc/smtpd/smtpd.conf:ro
+      - ./volumes/certs/davismakerspace.org:/etc/smtpd/certs:ro
+      - ./volumes/opensmtpd-tables:/etc/smtpd/tables:ro
+      - ./volumes/opensmtpd-spool:/var/spool/smtpd
+    networks:
+      mail:
+        aliases:
+          - opensmtpd-mail
+      listserv:
+        aliases:
+          - opensmtpd-listserv
+      wordpress:
+        aliases:
+          - opensmtpd-wordpress
+    ports:
+      - "25:25"
+      - "587:587"
+    restart: always
+
+  # Gitit is the wiki, proxied to the outside via the nginx service.
+  gitit:
+    build: builds/gitit
+    volumes:
+      - ./volumes/gitit:/data
+    networks:
+      - www
+    restart: always
+
+  # DKIMProxy is used by OpenSMTPD to sign outgoing messages using DKIM.
+  dkimproxy:
+    build: builds/dkimproxy
+    networks:
+      - mail
+    secrets:
+      - 20180611.pem
+    restart: always
+
+  # dkimkeys service uses a custom Python script to create a DKIM key, if
+  # neccesary.
+  dkimkeys:
+    build: builds/dkimkeys
+    volumes:
+      - ./secrets/dkim/:/run/dkim/
+    secrets:
+      - linode-api-token
+
+  # Certbot is used to create Let's Encrypt SSL certificates; it checks once per
+  # day to see if the certificates need a renewal.
+  certbot:
+    build: builds/certbot
+    environment:
+      DEPLOY_DIR: /run/certs
+    volumes:
+      - ./volumes/letsencrypt/:/etc/letsencrypt/
+      - ./volumes/certs/:/run/certs/
+    secrets:
+      - linode-api-token
+    restart: always
+
+  # mailman2-* services form the mailing list, all using the same general setup,
+  # but just running different executables.  The web interface is proxied to the
+  # outside via the nginx service, and the email interface is relayed to the
+  # outside via the opensmtpd service.
+  mailman2-qrunner:
+    << : *mailman2-common
+    command: qrunner
+  mailman2-apache2:
+    << : *mailman2-common
+    command: apache2
+  mailman2-opensmtpd:
+    << : *mailman2-common
+    command: opensmtpd
+  mailman2-crond:
+    << : *mailman2-common
+    command: crond
+
+  wordpress-nginx:
+    image: nginx:1.15-alpine
+    volumes:
+      - net-wordpress-nginx:/run/wordpress-nginx
+      - net-wordpress-php-fpm:/run/wordpress-php-fpm:ro
+      - ./conf/wordpress-nginx-http.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./volumes/wordpress:/run/wordpress
+    restart: always
+  wordpress-php-fpm:
+    build:
+      context: builds/php-fpm
+      args:
+        << : *php-version
+    read_only: true
+    volumes:
+      - { type: tmpfs, target: /tmp }
+      - net-wordpress-php-fpm:/run/php-fpm
+      - net-wordpress-mariadb:/run/mysqld:ro
+      - ./conf/wp-config.php:/run/wordpress/wp-config.php:ro
+      - ./volumes/wordpress:/run/wordpress
+    networks:
+      - wordpress
+    secrets:
+      - wordpress.ini
+    restart: always
+  wordpress-mariadb:
+    build: builds/mariadb
+    volumes:
+      - net-wordpress-mariadb:/run/mysqld
+      - ./volumes/wordpress-db:/var/lib/mysql
+    restart: always
+
+  # The backdoor provides a place for people to SSH in to do certain
+  # administrative tasks that are too vaguely defined for now to encode
+  # completely into this container setup.
+  backdoor:
+    build: builds/backdoor
+    read_only: true
+    volumes:
+      - { type: tmpfs, target: /tmp }
+      - { type: tmpfs, target: /run }
+      - ./conf/backdoor-setup:/run/backdoor-setup:ro
+      - ./volumes/backdoor/home:/home
+      - ./volumes/backdoor/etc:/run/etc
+      - ./tools/backdoor:/usr/local/bin:ro
+      - net-opensmtpd-ctl:/run/opensmtpd:ro
+      - ./volumes/opensmtpd-tables:/run/opensmtpd-tables
+      - ./volumes/wordpress/wp-content/themes/dmsWPtheme:/srv/dmsWPtheme
+    hostname: dms-backdoor
+    networks:
+      - backdoor
+    ports:
+      - "1337:22"
+    restart: always
+
+
+secrets:
+  linode-api-token:
+    file: ./secrets/linode-api-token
+  smtp-creds:
+    file: ./secrets/smtp-creds
+  forwards:
+    file: ./secrets/forwards
+  20180611.pem:
+    file: ./secrets/dkim/20180611.pem
+  wordpress.ini:
+    file: ./secrets/wordpress.ini
+
+
+networks:
+  www:
+  mail:
+  listserv:
+  wordpress:
+  backdoor:
+
+
+volumes:
+  # These volumes are used for sharing Unix domain sockets.  We don't use the
+  # filesystem volumes for this because there is no need for backups.
+  net-opensmtpd-ctl:
+  net-wordpress-nginx:
+  net-wordpress-php-fpm:
+  net-wordpress-mariadb:

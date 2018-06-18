@@ -1,0 +1,10 @@
+#!/bin/sh
+set -euf -o pipefail
+[[ "$(/usr/bin/id -u)" == "0" ]] || exec sudo "$0" "$@"
+
+forwards_file=/run/opensmtpd-tables/forwards
+aliases_file=/run/opensmtpd-tables/aliases
+aliases_db=/run/opensmtpd-tables/aliases.db
+
+cat "$aliases_file" "$forwards_file" | makemap -o "$aliases_db" -
+smtpctl update table aliases

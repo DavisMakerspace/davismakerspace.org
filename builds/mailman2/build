@@ -1,0 +1,46 @@
+#!/bin/sh
+set -euf -o pipefail
+
+build_pkgs="curl gnupg build-base python2-dev"
+data_dirs="archives data lists locks logs qfiles spam"
+
+apk --no-cache add $build_pkgs
+
+# Get environment ready for Mailman
+base=/usr/local/mailman
+mkdir -p "$base/.skel"
+chown mailman:mailman "$base"
+chmod a+rx,g+ws "$base"
+
+# Download, verify, and install Mailman
+curl -L -O ${URL} -O ${URL}.asc
+gpg --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys ${KEYS}
+gpg --verify mailman-${VERSION}.tgz.asc mailman-${VERSION}.tgz
+su mailman sh -c "set -euf -o pipefail
+  cd /tmp
+  tar -xf /mailman-${VERSION}.tgz
+  cd mailman-${VERSION}
+  patch bin/mailmanctl /mailmanctl.patch
+  ./configure \
+    --with-mail-gid=smtpd \
+    --with-cgi-gid=apache
+  make install
+"
+crontab -u mailman /usr/local/mailman/cron/crontab.in
+
+# Create skeleton mutable data directories, and link the mutable data
+# directories to an expected volume mount at /run/mailman.
+for d in $data_dirs; do
+  mv "$base/$d" "$base/.skel/"
+  ln -s "/run/mailman/$d" "$base/$d"
+done
+
+# Cleanup
+rm -rf \
+  "$0" \
+  /mailman-${VERSION}.tgz.asc \
+  /mailman-${VERSION}.tgz \
+  /tmp/mailman-${VERSION} \
+  /mailmanctl.patch \
+  /etc/smtpd
+apk --no-cache del $build_pkgs

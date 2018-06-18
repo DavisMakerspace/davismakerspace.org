@@ -1,0 +1,36 @@
+#!/bin/sh
+set -euf -o pipefail
+
+( flock 9
+  chown -R mailman:mailman /run/mailman
+  chmod -R a+rX,g+ws /run/mailman
+  # If we find an empty data volume, we generate the initial list and populate
+  # the data volume with the initialized data directories.
+  if [[ "$(find /run/mailman -maxdepth 1 -type d | wc -l)" == 1 ]]; then
+    echo "Generating initial mailman list and data directories"
+    cd /usr/local/mailman
+    ( cd .skel; cp -a . /run/mailman )
+    password=$(head -c 15 /dev/urandom | base64)
+    su-exec mailman:mailman bin/newlist -a mailman admin@davismakerspace.org "$password"
+    echo "Created initial list \"mailman\" with password: $password"
+    su-exec mailman:mailman bin/config_list -i data/sitelist.cfg mailman
+  fi
+) 9>/run/mailman/.initlock
+
+cmd=${1:-}; shift || true
+case "$cmd" in
+qrunner)
+  cd /usr/local/mailman
+  exec su-exec mailman:mailman bin/mailmanctl start
+;;
+apache2)
+  exec /usr/sbin/httpd -DFOREGROUND
+;;
+opensmtpd)
+  chmod 711 /var/spool/smtpd
+  exec /usr/sbin/smtpd -d
+;;
+crond)
+  exec crond -f
+;;
+esac

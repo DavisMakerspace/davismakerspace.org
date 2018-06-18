@@ -1,0 +1,32 @@
+#!/bin/sh
+set -euf -o pipefail
+[[ "$(/usr/bin/id -u)" == "0" ]] || exec sudo "$0" "$@"
+
+forwards_file=/run/opensmtpd-tables/forwards
+
+user=$(echo "${1:-$SUDO_USER}" | tr -cd 'a-zA-Z0-9_.-')
+
+cur_addr=$(sed -r "s|^$user (.*)\$|\1|p;d" "$forwards_file")
+
+echo "Changing forwarding address for $user."
+if [[ -z "$cur_addr" ]]; then
+  echo "No current forwarding address."
+else
+  echo "Current forwarding address is: $cur_addr"
+fi
+
+read -p "New forwarding address: "
+if [[ -z "$REPLY" ]]; then
+  echo "Forwarding address unchanged."
+  exit
+fi
+addr=$(echo "$REPLY" | tr -cd 'a-zA-Z0-9@+_.-')
+
+if [[ -z "$cur_addr" ]]; then
+  echo "$user $addr" >>"$forwards_file"
+else
+  sed -i'' "s|^$user .*\$|$user $addr|" "$forwards_file"
+fi
+
+mailupdatealiases
+echo "Forwarding address now: $addr"

@@ -1,0 +1,34 @@
+--- mailmanctl
++++ mailmanctl-no-daemonize
+@@ -391,20 +391,6 @@
+         lock = acquire_lock(force)
+         if not lock:
+             return
+-        # Daemon process startup according to Stevens, Advanced Programming in
+-        # the UNIX Environment, Chapter 13.
+-        pid = os.fork()
+-        if pid:
+-            # parent
+-            if not quiet:
+-                print C_("Starting Mailman's master qrunner.")
+-            # Give up the lock "ownership".  This just means the foreground
+-            # process won't close/unlock the lock when it finalizes this lock
+-            # instance.  We'll let the mater watcher subproc own the lock.
+-            lock._transfer_to(pid)
+-            return
+-        # child
+-        lock._take_possession()
+         # First, save our pid in a file for "mailmanctl stop" rendezvous.  We
+         # want the perms on the .pid file to be rw-rw----
+         omask = os.umask(6)
+@@ -414,10 +400,6 @@
+             fp.close()
+         finally:
+             os.umask(omask)
+-        # Create a new session and become the session leader, but since we
+-        # won't be opening any terminal devices, don't do the ultra-paranoid
+-        # suggestion of doing a second fork after the setsid() call.
+-        os.setsid()
+
+         # Be sure to close any open std{in,out,err}
+         devnull = os.open('/dev/null', 0)

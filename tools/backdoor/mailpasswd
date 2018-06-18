@@ -1,0 +1,23 @@
+#!/bin/sh
+set -euf -o pipefail
+[[ "$(/usr/bin/id -u)" == "0" ]] || exec sudo "$0" "$@"
+
+creds_file=/run/opensmtpd-tables/creds
+
+user=${1:-$SUDO_USER}
+
+if ! (grep "^$user " "$creds_file" &>/dev/null); then
+  echo "No such mail user $user." >&2
+  exit 1
+fi
+
+echo "Changing mail password for $user."
+read -s -p "New mail password: "; echo
+if [[ -z "$REPLY" ]]; then
+  echo "Mail password unchanged"
+  exit
+fi
+cryptedpw=$(echo "$REPLY" | cryptpw)
+sed -i'' "s|^$user .*\$|$user $cryptedpw|" "$creds_file"
+smtpctl update table creds
+echo "Mail password changed."

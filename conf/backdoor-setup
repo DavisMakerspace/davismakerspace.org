@@ -1,0 +1,4 @@
+#!/bin/sh
+set -euf -o pipefail
+
+ln -sf /run/opensmtpd/smtpd.sock /run/smtpd.sock

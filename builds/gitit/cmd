@@ -1,0 +1,3 @@
+#!/bin/sh
+chown -R gitit:gitit /data
+exec chroot --userspec=gitit:gitit / /usr/bin/gitit -f /etc/gitit.conf

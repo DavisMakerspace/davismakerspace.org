@@ -1,0 +1,4 @@
+#!/bin/sh
+set -euf -o pipefail
+chmod 600 "$RENEWED_LINEAGE/privkey.pem"
+cp -RLf "$RENEWED_LINEAGE" "$DEPLOY_DIR"

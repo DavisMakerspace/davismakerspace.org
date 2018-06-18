@@ -1,0 +1,33 @@
+#!/bin/sh
+set -euf -o pipefail
+
+dirs="/etc/letsencrypt $DEPLOY_DIR"
+chown -R 0:0 $dirs
+chmod 700 $dirs
+
+certbot() {
+  $HOME/.local/bin/certbot \
+    --server https://acme-v02.api.letsencrypt.org/directory \
+    --manual --preferred-challenges dns \
+    --noninteractive \
+    --max-log-backups 0 \
+    --work-dir /tmp/certbot-work \
+    --manual-auth-hook /usr/local/bin/certbot-dns-linode \
+    --manual-cleanup-hook /usr/local/bin/certbot-dns-linode \
+    --deploy-hook /usr/local/bin/certbot-deploy \
+    "$@"
+}
+
+touch /var/log/letsencrypt/letsencrypt.log
+tail -n 0 -f /var/log/letsencrypt/letsencrypt.log &
+while true; do
+  if [[ ! -e /etc/letsencrypt/live/davismakerspace.org ]]; then
+    certbot certonly \
+      --manual-public-ip-logging-ok --agree-tos \
+      --email letsencrypt@davismakerspace.org --no-eff-email \
+      -d 'davismakerspace.org,*.davismakerspace.org'
+  else
+    certbot renew
+  fi
+  sleep 1d
+done

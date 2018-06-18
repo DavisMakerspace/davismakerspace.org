@@ -1,0 +1,75 @@
+#!/usr/bin/python3
+
+from datetime import datetime
+from os import chmod
+import json
+
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+import requests
+
+
+DOMAINS_URL = 'https://api.linode.com/v4/domains'
+DOMAIN = 'davismakerspace.org'
+TOKEN_PATH = '/run/secrets/linode-api-token'
+OUTPUT_PATH ='/run/dkim'
+
+
+with open(TOKEN_PATH, 'r') as f:
+  api_key = f.read().strip()
+
+domains_res = requests.get(
+  url=DOMAINS_URL,
+  headers={
+    'Authorization': 'Bearer ' + api_key,
+    'X-Filter': json.dumps({'domain': DOMAIN})
+  },
+)
+domains_res.raise_for_status()
+domain_url = DOMAINS_URL + '/' + str(domains_res.json()['data'][0]['id'])
+
+search_res = requests.get(
+  url=domain_url+'/records',
+  headers={
+    'Authorization': 'Bearer ' + api_key,
+    'X-Filter': json.dumps({'type': 'TXT', 'name': {'+contains': '._domainkey'}}),
+  },
+)
+search_res.raise_for_status()
+if len(search_res.json()['data']) > 0:
+  print('A DKIM appears to already exist for the domain.')
+  exit(0)
+
+selector = datetime.utcnow().strftime('%Y%m%d')
+
+private_key = rsa.generate_private_key(
+  public_exponent=65537,
+  key_size=2048,
+  backend=default_backend(),
+)
+
+private_pem = private_key.private_bytes(
+  encoding=serialization.Encoding.PEM,
+  format=serialization.PrivateFormat.TraditionalOpenSSL,
+  encryption_algorithm=serialization.NoEncryption()
+)
+
+public_dkim = ''.join(private_key.public_key().public_bytes(
+  encoding=serialization.Encoding.PEM,
+  format=serialization.PublicFormat.SubjectPublicKeyInfo
+).decode('ascii').splitlines()[1:-1])
+
+requests.post(
+  url=domain_url+'/records',
+  headers={'Authorization': 'Bearer ' + api_key},
+  json={
+    'type': 'TXT',
+    'name': selector + '._domainkey',
+    'target': 'v=DKIM1;t=s;n=core;p=' + public_dkim,
+  },
+).raise_for_status()
+
+with open(OUTPUT_PATH + '/' + selector + '.pem', 'wb') as f:
+  chmod(f.fileno(), 0o600)
+  f.write(private_pem)

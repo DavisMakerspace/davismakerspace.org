@@ -1,0 +1,14 @@
+#!/bin/sh
+set -euf -o pipefail
+
+name=$1; shift
+ssh_pubkey=$@
+
+# Verify we have a valid key.
+echo "$ssh_pubkey" | ssh-keygen -l -f -
+
+adduser -D "$name"
+sed -i'' -r "s/^$name:!/$name:*/" /run/etc/shadow
+mkdir -m 0700 "/home/$name/.ssh"
+echo "$ssh_pubkey" >"/home/$name/.ssh/authorized_keys"
+chown -R "$name:$name" "/home/$name/.ssh"

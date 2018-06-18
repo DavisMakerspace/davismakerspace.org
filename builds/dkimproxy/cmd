@@ -1,0 +1,19 @@
+#!/bin/sh
+set -euf -o pipefail
+
+keyfile=$(find /run/secrets -maxdepth 1 -name '*.pem' | sort -r | head -n 1)
+selector=$(basename "$keyfile" .pem)
+
+if [[ -z "$keyfile" ]]; then
+  echo "no keyfile found" >&2
+  exit 1
+fi
+echo "keyfile = $keyfile"
+echo "selector = $selector"
+
+cp "$keyfile" /tmp/keyfile
+chown dkimproxy:dkimproxy /tmp/keyfile
+exec /usr/sbin/dkimproxy.out \
+  --conf_file=/etc/dkimproxy/dkimproxy-out.conf \
+  --keyfile=/tmp/keyfile \
+  --selector=$selector

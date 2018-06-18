@@ -1,0 +1,33 @@
+#!/bin/sh
+set -euf -o pipefail
+
+target=/usr/local/php7
+build_pkgs="build-base bison re2c libxml2-dev curl-dev libressl-dev zlib-dev"
+
+apk add --no-cache $build_pkgs libxml2 libcurl libressl zlib
+
+wget -O php7.tar.xz http://us1.php.net/get/php-$php_version.tar.xz/from/this/mirror
+echo "$php_xz_sha256 *php7.tar.xz" | sha256sum -c -
+
+mkdir -p "$target"
+chown builder:builder "$target"
+su - builder sh -c "set -euf -o pipefail
+  tar -xf /php7.tar.xz
+  ( cd php-$php_version
+    ./configure \
+      --prefix=$target \
+      --disable-cli --disable-cgi --disable-phpdbg \
+      --enable-fpm \
+      --enable-mbstring \
+      --with-curl \
+      --with-mysqli \
+      --with-openssl \
+      --with-zlib
+    time make
+    make install
+  )
+  rm -rf php-$php_version
+"
+cd /
+apk del $build_pkgs
+rm -rf $0 php7.tar.xz
