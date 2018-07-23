@@ -1,0 +1,46 @@
+# This docker-compose file is only for building the custom images defined in
+# this repository.  (This might be more suitable for a separate tool, but the
+# build needs are simple and we are already using docker-compose, so...)
+version: '3.6'
+
+services:
+
+  mailman2:
+    image: davismakerspace/org:mailman2
+    build: mailman2
+
+  opensmtpd:
+    image: davismakerspace/org:opensmtpd
+    build: opensmtpd
+
+  gitit:
+    image: davismakerspace/org:gitit
+    build: gitit
+
+  dkimproxy:
+    image: davismakerspace/org:dkimproxy
+    build: dkimproxy
+
+  dkimkeys:
+    image: davismakerspace/org:dkimkeys
+    build: dkimkeys
+
+  certbot:
+    image: davismakerspace/org:certbot
+    build: certbot
+
+  php-fpm:
+    image: davismakerspace/org:php-fpm
+    build:
+      context: php-fpm
+      args:
+        php_version: 7.2.7
+        php_xz_sha256: eb01c0153b3baf1f64b8b044013ce414b52fede222df3f509e8ff209478f31f0
+
+  mariadb:
+    image: davismakerspace/org:mariadb
+    build: mariadb
+
+  backdoor:
+    image: davismakerspace/org:backdoor
+    build: backdoor

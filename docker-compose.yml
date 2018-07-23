@@ -1,15 +1,9 @@
 version: '3.6'
 
 
-x-php-version: &php-version
-  php_version: 7.2.7
-  php_xz_sha256: eb01c0153b3baf1f64b8b044013ce414b52fede222df3f509e8ff209478f31f0
-
-
 # Common configuration for the services that make up Mailman 2.
 x-mailman2-common: &mailman2-common
-  image: mailman2
-  build: builds/mailman2
+  image: davismakerspace/org:mailman2
   volumes:
     - ./volumes/mailman:/run/mailman
     - ./volumes/mailman-spool/:/var/spool/smtpd/
@@ -39,7 +33,7 @@ services:
 
   # OpenSMTPD is used as the public-facing email server.
   opensmtpd:
-    build: builds/opensmtpd
+    image: davismakerspace/org:opensmtpd
     read_only: true
     volumes:
       - net-opensmtpd-ctl:/run
@@ -64,7 +58,7 @@ services:
 
   # Gitit is the wiki, proxied to the outside via the nginx service.
   gitit:
-    build: builds/gitit
+    image: davismakerspace/org:gitit
     volumes:
       - ./volumes/gitit:/data
     networks:
@@ -73,7 +67,7 @@ services:
 
   # DKIMProxy is used by OpenSMTPD to sign outgoing messages using DKIM.
   dkimproxy:
-    build: builds/dkimproxy
+    image: davismakerspace/org:dkimproxy
     networks:
       - mail
     secrets:
@@ -83,7 +77,7 @@ services:
   # dkimkeys service uses a custom Python script to create a DKIM key, if
   # neccesary.
   dkimkeys:
-    build: builds/dkimkeys
+    image: davismakerspace/org:dkimkeys
     volumes:
       - ./secrets/dkim/:/run/dkim/
     secrets:
@@ -92,7 +86,7 @@ services:
   # Certbot is used to create Let's Encrypt SSL certificates; it checks once per
   # day to see if the certificates need a renewal.
   certbot:
-    build: builds/certbot
+    image: davismakerspace/org:certbot
     environment:
       DEPLOY_DIR: /run/certs
     volumes:
@@ -128,10 +122,7 @@ services:
       - ./volumes/wordpress:/run/wordpress
     restart: always
   wordpress-php-fpm:
-    build:
-      context: builds/php-fpm
-      args:
-        << : *php-version
+    image: davismakerspace/org:php-fpm
     read_only: true
     volumes:
       - { type: tmpfs, target: /tmp }
@@ -145,7 +136,7 @@ services:
       - wordpress.ini
     restart: always
   wordpress-mariadb:
-    build: builds/mariadb
+    image: davismakerspace/org:mariadb
     volumes:
       - net-wordpress-mariadb:/run/mysqld
       - ./volumes/wordpress-db:/var/lib/mysql
@@ -155,7 +146,7 @@ services:
   # administrative tasks that are too vaguely defined for now to encode
   # completely into this container setup.
   backdoor:
-    build: builds/backdoor
+    image: davismakerspace/org:backdoor
     read_only: true
     volumes:
       - { type: tmpfs, target: /tmp }
