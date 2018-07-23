@@ -178,10 +178,6 @@ services:
 secrets:
   linode-api-token:
     file: ./secrets/linode-api-token
-  smtp-creds:
-    file: ./secrets/smtp-creds
-  forwards:
-    file: ./secrets/forwards
   20180611.pem:
     file: ./secrets/dkim/20180611.pem
   wordpress.ini:
