@@ -2,9 +2,9 @@
 set -euf -o pipefail
 
 target=/usr/local/php7
-build_pkgs="build-base bison re2c libxml2-dev curl-dev libressl-dev zlib-dev"
+build_pkgs="argon2-dev build-base bison re2c libxml2-dev curl-dev libressl-dev zlib-dev"
 
-apk add --no-cache $build_pkgs libxml2 libcurl libressl zlib
+apk add --no-cache $build_pkgs argon2-libs libxml2 libcurl libressl zlib
 
 wget -O php7.tar.xz http://us1.php.net/get/php-$php_version.tar.xz/from/this/mirror
 echo "$php_xz_sha256 *php7.tar.xz" | sha256sum -c -
@@ -16,12 +16,14 @@ su - builder sh -c "set -euf -o pipefail
   ( cd php-$php_version
     ./configure \
       --prefix=$target \
+      --enable-option-checking=fatal \
       --disable-cli --disable-cgi --disable-phpdbg \
       --enable-fpm \
       --enable-mbstring \
       --with-curl \
       --with-mysqli \
       --with-openssl \
+      --with-password-argon2 \
       --with-zlib
     time make
     make install
