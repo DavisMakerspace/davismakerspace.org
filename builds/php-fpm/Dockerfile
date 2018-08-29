@@ -1,9 +1,12 @@
-FROM alpine:3.8
+ARG version
+FROM php:${version}-fpm-alpine
 
-RUN adduser -D builder
-ARG php_version
-ARG php_xz_sha256
-COPY build-php7 /
-RUN /build-php7
-COPY php-fpm.conf /usr/local/php7/etc/
-ENTRYPOINT ["/usr/local/php7/sbin/php-fpm"]
+RUN \
+  apk add --no-cache libjpeg-turbo libpng &&\
+  apk add --no-cache --virtual .build-deps libjpeg-turbo-dev libpng-dev &&\
+  docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr &&\
+  docker-php-ext-install gd mysqli opcache zip &&\
+  apk del .build-deps
+
+COPY php-fpm.conf /usr/local/etc/php-fpm.d/
+COPY opcache.conf /usr/local/etc/php/

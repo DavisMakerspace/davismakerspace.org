@@ -34,8 +34,7 @@ services:
     build:
       context: php-fpm
       args:
-        php_version: 7.2.8
-        php_xz_sha256: 53ba0708be8a7db44256e3ae9fcecc91b811e5b5119e6080c951ffe7910ffb0f
+        version: 7.2
 
   mariadb:
     image: davismakerspace/org:mariadb
