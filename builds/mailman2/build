@@ -1,7 +1,10 @@
 #!/bin/sh
 set -euf -o pipefail
 
-build_pkgs="curl gnupg build-base python2-dev"
+version=${major_minor_version}.${patch_version}
+url=https://launchpad.net/mailman/${major_minor_version}/${version}/+download/mailman-${version}.tgz
+
+build_pkgs="curl gnupg make gcc libc-dev python2-dev"
 data_dirs="archives data lists locks logs qfiles spam"
 
 apk --no-cache add $build_pkgs
@@ -13,13 +16,13 @@ chown mailman:mailman "$base"
 chmod a+rx,g+ws "$base"
 
 # Download, verify, and install Mailman
-curl -L -O ${URL} -O ${URL}.asc
-gpg --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys ${KEYS}
-gpg --verify mailman-${VERSION}.tgz.asc mailman-${VERSION}.tgz
+curl -L -O ${url} -O ${url}.asc
+gpg --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys ${keys}
+gpg --verify mailman-${version}.tgz.asc mailman-${version}.tgz
 su mailman sh -c "set -euf -o pipefail
   cd /tmp
-  tar -xf /mailman-${VERSION}.tgz
-  cd mailman-${VERSION}
+  tar -xf /mailman-${version}.tgz
+  cd mailman-${version}
   patch bin/mailmanctl /mailmanctl.patch
   ./configure \
     --with-mail-gid=smtpd \
@@ -38,9 +41,9 @@ done
 # Cleanup
 rm -rf \
   "$0" \
-  /mailman-${VERSION}.tgz.asc \
-  /mailman-${VERSION}.tgz \
-  /tmp/mailman-${VERSION} \
+  /mailman-${version}.tgz.asc \
+  /mailman-${version}.tgz \
+  /tmp/mailman-${version} \
   /mailmanctl.patch \
   /etc/smtpd
 apk --no-cache del $build_pkgs

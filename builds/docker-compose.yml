@@ -7,7 +7,12 @@ services:
 
   mailman2:
     image: davismakerspace/org:mailman2
-    build: mailman2
+    build:
+      context: mailman2
+      args:
+        major_minor_version: 2.1
+        patch_version: 29
+        keys: A74B06BF 953B8693 61D0A67C
 
   opensmtpd:
     image: davismakerspace/org:opensmtpd
