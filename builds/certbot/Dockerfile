@@ -1,4 +1,4 @@
-FROM alpine:3.7
+FROM alpine:3.9
 
 RUN apk --no-cache add py3-cryptography py3-openssl py3-requests py3-dnspython
 RUN pip3 --no-cache-dir install --user certbot
