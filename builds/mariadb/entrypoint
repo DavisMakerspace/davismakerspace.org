@@ -20,7 +20,7 @@ mysqld_common="
 
 # Enforce access to only be through a Unix domain socket.  Also be sure the test
 # database is cleared out.
-$mysqld_common --socket=/tmp/mysql.sock & pid=$?
+$mysqld_common --skip-grant-tables --socket=/tmp/mysql.sock & pid=$?
 while [[ ! -S /tmp/mysql.sock ]]; do sleep 0.1; done
 mysql_upgrade --socket=/tmp/mysql.sock
 echo "
@@ -29,7 +29,6 @@ echo "
   UPDATE mysql.user SET plugin = 'unix_socket' WHERE User='root';
   FLUSH PRIVILEGES;
 " | mysql --socket=/tmp/mysql.sock
-mysqladmin --socket=/tmp/mysql.sock -u root password "$(head -c 24 /dev/urandom | base64)"
 kill $pid
 wait
 
