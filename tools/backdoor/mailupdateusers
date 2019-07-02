@@ -6,4 +6,5 @@ creds_file=/run/opensmtpd-tables/creds
 users_db=/run/opensmtpd-tables/users.db
 
 sed -r 's/^([^ ]+).*$/\1 \1@davismakerspace.org/' "$creds_file" | makemap -o "$users_db" -
+chown smtpd "$users_db"
 smtpctl update table users
