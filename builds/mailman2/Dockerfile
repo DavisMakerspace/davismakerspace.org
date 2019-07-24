@@ -1,4 +1,4 @@
-FROM alpine:3.9
+FROM alpine:3.10
 
 RUN apk --no-cache add py2-dnspython apache2 opensmtpd su-exec
 RUN adduser -D mailman
