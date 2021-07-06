@@ -41,6 +41,8 @@ services:
       args:
         version: 7.4
 
+  # Use MariaDB in Alpine Linux to save space;
+  # no Alpine version exists in https://hub.docker.com/_/mariadb/
   mariadb:
     image: davismakerspace/org:mariadb
     build: mariadb

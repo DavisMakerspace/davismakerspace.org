@@ -3,33 +3,4 @@ set -euf -o pipefail
 
 mkdir -p /run/mysqld
 chown mysql:mysql /run/mysqld
-
-DATADIR=/var/lib/mysql
-
-# Initialize the database if there are no database files.
-if [[ "$(find "$DATADIR" -maxdepth 1 -type d | wc -l)" == 1 ]]; then
-  mysql_install_db --user=mysql --datadir="$DATADIR" --skip-auth-anonymous-user
-fi
-
-# We define this as a variable so that we may `exec` it (which we cannot do with
-# a shell function or alias).
-mysqld_common="
-  mysqld --user=mysql --datadir=$DATADIR
-    --skip-networking --plugin-load=unix_socket=auth_socket
-"
-
-# Enforce access to only be through a Unix domain socket.  Also be sure the test
-# database is cleared out.
-$mysqld_common --skip-grant-tables --socket=/tmp/mysql.sock & pid=$?
-while [[ ! -S /tmp/mysql.sock ]]; do sleep 0.1; done
-mysql_upgrade --socket=/tmp/mysql.sock
-echo "
-  DROP DATABASE IF EXISTS test;
-  DELETE FROM mysql.user WHERE User='root' AND HOST != 'localhost';
-  UPDATE mysql.user SET plugin = 'unix_socket' WHERE User='root';
-  FLUSH PRIVILEGES;
-" | mysql --socket=/tmp/mysql.sock
-kill $pid
-wait
-
-exec $mysqld_common
+exec mysqld --user=mysql --datadir=/var/lib/mysql --skip-networking --plugin-load=unix_socket=auth_socket
