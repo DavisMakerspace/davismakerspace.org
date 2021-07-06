@@ -4,10 +4,11 @@ set -euf -o pipefail
 version=${major_minor_version}.${patch_version}
 url=https://launchpad.net/mailman/${major_minor_version}/${version}/+download/mailman-${version}.tgz
 
-build_pkgs="curl gnupg make gcc libc-dev python2-dev"
+build_pkgs="curl gnupg make gcc libc-dev python2-dev py2-pip"
 data_dirs="archives data lists locks logs qfiles spam"
 
-apk --no-cache add $build_pkgs
+apk --no-cache add python $build_pkgs
+pip install dnspython
 
 # Get environment ready for Mailman
 base=/usr/local/mailman

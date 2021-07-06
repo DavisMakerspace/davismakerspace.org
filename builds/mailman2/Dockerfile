@@ -1,6 +1,6 @@
-FROM alpine:3.10
+FROM alpine:3.11
 
-RUN apk --no-cache add py2-dnspython apache2 opensmtpd su-exec
+RUN apk --no-cache add apache2 opensmtpd patch su-exec
 RUN adduser -D mailman
 
 ARG major_minor_version
