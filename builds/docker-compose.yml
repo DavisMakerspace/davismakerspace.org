@@ -39,7 +39,7 @@ services:
     build:
       context: php-fpm
       args:
-        version: 7.2
+        version: 7.4
 
   mariadb:
     image: davismakerspace/org:mariadb
