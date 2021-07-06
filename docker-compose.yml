@@ -17,7 +17,7 @@ services:
   # The public-facing web server, responsible for providing an HTTPS
   # reverse-proxy to other internal web services.
   nginx:
-    image: nginx:1.17-alpine
+    image: nginx:1.20-alpine
     volumes:
       - ./conf/nginx-http.conf:/etc/nginx/conf.d/default.conf:ro
       - ./volumes/certs/davismakerspace.org:/run/certs:ro
