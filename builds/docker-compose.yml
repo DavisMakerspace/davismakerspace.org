@@ -11,8 +11,8 @@ services:
       context: mailman2
       args:
         major_minor_version: 2.1
-        patch_version: 29
-        keys: A74B06BF 953B8693 61D0A67C
+        patch_version: 34
+        keys: C638CAEF0AC21563736B5A22555B975E953B8693
 
   opensmtpd:
     image: davismakerspace/org:opensmtpd

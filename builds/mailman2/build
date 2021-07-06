@@ -17,7 +17,7 @@ chmod a+rx,g+ws "$base"
 
 # Download, verify, and install Mailman
 curl -L -O ${url} -O ${url}.asc
-gpg --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys ${keys}
+gpg --keyserver keyserver.ubuntu.com --recv-keys ${keys}
 gpg --verify mailman-${version}.tgz.asc mailman-${version}.tgz
 su mailman sh -c "set -euf -o pipefail
   cd /tmp
