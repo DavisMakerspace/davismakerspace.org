@@ -1,4 +1,4 @@
-FROM debian:stretch
+FROM debian:bullseye
 
 RUN DEBIAN_FRONTEND=noninteractive \
   apt update &&\

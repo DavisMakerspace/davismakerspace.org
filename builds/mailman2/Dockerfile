@@ -1,3 +1,4 @@
+# alpine 3.11 is the last version to have python 2 pip.
 FROM alpine:3.11
 
 RUN apk --no-cache add apache2 opensmtpd patch su-exec

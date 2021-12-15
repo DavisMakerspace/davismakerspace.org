@@ -11,7 +11,7 @@ services:
       context: mailman2
       args:
         major_minor_version: 2.1
-        patch_version: 34
+        patch_version: 39
         keys: C638CAEF0AC21563736B5A22555B975E953B8693
 
   opensmtpd:
