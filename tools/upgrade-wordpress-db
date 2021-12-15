@@ -1,0 +1,4 @@
+#!/bin/bash
+set -euf -o pipefail
+cd "$(dirname "$0")"/..
+docker-compose exec wordpress-mariadb mysql_upgrade
