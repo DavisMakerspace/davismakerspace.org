@@ -2,7 +2,7 @@
 set -euf -o pipefail
 [[ "$(/usr/bin/id -u)" == "0" ]] || exec sudo "$0" "$@"
 
-creds_file=/run/opensmtpd-tables/creds
+creds_file=/etc/smtpd/tables/creds
 
 user=$(echo "$1" | tr -cd 'a-zA-Z0-9_.-')
 

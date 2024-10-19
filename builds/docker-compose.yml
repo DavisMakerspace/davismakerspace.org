@@ -44,7 +44,3 @@ services:
   mariadb:
     image: davismakerspace/org:mariadb
     build: mariadb
-
-  backdoor:
-    image: davismakerspace/org:backdoor
-    build: backdoor

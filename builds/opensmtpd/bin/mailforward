@@ -2,7 +2,7 @@
 set -euf -o pipefail
 [[ "$(/usr/bin/id -u)" == "0" ]] || exec sudo "$0" "$@"
 
-forwards_file=/run/opensmtpd-tables/forwards
+forwards_file=/etc/smtpd/tables/forwards
 
 user=$(echo "${1:-$SUDO_USER}" | tr -cd 'a-zA-Z0-9_.-')
 

@@ -36,7 +36,7 @@ services:
       - net-opensmtpd-ctl:/run
       - ./conf/opensmtpd.conf:/etc/smtpd/smtpd.conf:ro
       - ./volumes/certs/davismakerspace.org:/etc/smtpd/certs:ro
-      - ./volumes/opensmtpd-tables:/etc/smtpd/tables:ro
+      - ./volumes/opensmtpd-tables:/etc/smtpd/tables
       - ./volumes/opensmtpd-spool:/var/spool/smtpd
     networks:
       mail:
@@ -139,29 +139,6 @@ services:
       - ./volumes/wordpress-db:/var/lib/mysql
     restart: always
 
-  # The backdoor provides a place for people to SSH in to do certain
-  # administrative tasks that are too vaguely defined for now to encode
-  # completely into this container setup.
-  backdoor:
-    image: davismakerspace/org:backdoor
-    read_only: true
-    volumes:
-      - { type: tmpfs, target: /tmp }
-      - { type: tmpfs, target: /run }
-      - ./conf/backdoor-setup:/run/backdoor-setup:ro
-      - ./volumes/backdoor/home:/home
-      - ./volumes/backdoor/etc:/run/etc
-      - ./tools/backdoor:/usr/local/bin:ro
-      - net-opensmtpd-ctl:/run/opensmtpd:ro
-      - ./volumes/opensmtpd-tables:/run/opensmtpd-tables
-      - ./volumes/wordpress/wp-content/themes/dmsWPtheme:/srv/dmsWPtheme
-    hostname: dms-backdoor
-    networks:
-      - backdoor
-    ports:
-      - "1337:22"
-    restart: always
-
 
 secrets:
   linode-api-token:
@@ -177,7 +154,6 @@ networks:
   mail:
   listserv:
   wordpress:
-  backdoor:
 
 
 volumes:

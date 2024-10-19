@@ -2,9 +2,9 @@
 set -euf -o pipefail
 [[ "$(/usr/bin/id -u)" == "0" ]] || exec sudo "$0" "$@"
 
-forwards_file=/run/opensmtpd-tables/forwards
-aliases_file=/run/opensmtpd-tables/aliases
-aliases_db=/run/opensmtpd-tables/aliases.db
+forwards_file=/etc/stmpd/tables/forwards
+aliases_file=/etc/stmpd/tables/aliases
+aliases_db=/etc/stmpd/tables/aliases.db
 
 cat "$aliases_file" "$forwards_file" | makemap -o "$aliases_db" -
 chown smtpd "$aliases_db"
