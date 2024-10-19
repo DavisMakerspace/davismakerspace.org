@@ -1,8 +1,6 @@
 # This docker-compose file is only for building the custom images defined in
 # this repository.  (This might be more suitable for a separate tool, but the
 # build needs are simple and we are already using docker-compose, so...)
-version: '3.6'
-
 services:
 
   mailman2:

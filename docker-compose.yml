@@ -1,6 +1,3 @@
-version: '3.6'
-
-
 # Common configuration for the services that make up Mailman 2.
 x-mailman2-common: &mailman2-common
   image: davismakerspace/org:mailman2
