@@ -4,7 +4,7 @@
 services:
 
   mailman2:
-    image: davismakerspace/org:mailman2
+    image: davismakerspace.org/mailman2:${TAG}
     build:
       context: mailman2
       args:
@@ -13,27 +13,27 @@ services:
         keys: C638CAEF0AC21563736B5A22555B975E953B8693
 
   opensmtpd:
-    image: davismakerspace/org:opensmtpd
+    image: davismakerspace.org/opensmtpd:${TAG}
     build: opensmtpd
 
   gitit:
-    image: davismakerspace/org:gitit
+    image: davismakerspace.org/gitit:${TAG}
     build: gitit
 
   dkimproxy:
-    image: davismakerspace/org:dkimproxy
+    image: davismakerspace.org/dkimproxy:${TAG}
     build: dkimproxy
 
   dkimkeys:
-    image: davismakerspace/org:dkimkeys
+    image: davismakerspace.org/dkimkeys:${TAG}
     build: dkimkeys
 
   certbot:
-    image: davismakerspace/org:certbot
+    image: davismakerspace.org/certbot:${TAG}
     build: certbot
 
   php-fpm:
-    image: davismakerspace/org:php-fpm
+    image: davismakerspace.org/php-fpm:${TAG}
     build:
       context: php-fpm
       args:
@@ -42,5 +42,5 @@ services:
   # Use MariaDB in Alpine Linux to save space;
   # no Alpine version exists in https://hub.docker.com/_/mariadb/
   mariadb:
-    image: davismakerspace/org:mariadb
+    image: davismakerspace.org/mariadb:${TAG}
     build: mariadb

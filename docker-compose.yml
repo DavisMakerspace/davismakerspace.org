@@ -1,6 +1,6 @@
 # Common configuration for the services that make up Mailman 2.
 x-mailman2-common: &mailman2-common
-  image: davismakerspace/org:mailman2
+  image: davismakerspace.org/mailman2:${TAG}
   volumes:
     - ./volumes/mailman:/run/mailman
     - ./volumes/mailman-spool/:/var/spool/smtpd/
@@ -30,7 +30,7 @@ services:
 
   # OpenSMTPD is used as the public-facing email server.
   opensmtpd:
-    image: davismakerspace/org:opensmtpd
+    image: davismakerspace.org/opensmtpd:${TAG}
     read_only: true
     volumes:
       - net-opensmtpd-ctl:/run
@@ -55,7 +55,7 @@ services:
 
   # Gitit is the wiki, proxied to the outside via the nginx service.
   gitit:
-    image: davismakerspace/org:gitit
+    image: davismakerspace.org/gitit:${TAG}
     volumes:
       - ./volumes/gitit:/data
     networks:
@@ -64,7 +64,7 @@ services:
 
   # DKIMProxy is used by OpenSMTPD to sign outgoing messages using DKIM.
   dkimproxy:
-    image: davismakerspace/org:dkimproxy
+    image: davismakerspace.org/dkimproxy:${TAG}
     networks:
       - mail
     secrets:
@@ -74,7 +74,7 @@ services:
   # dkimkeys service uses a custom Python script to create a DKIM key, if
   # neccesary.
   dkimkeys:
-    image: davismakerspace/org:dkimkeys
+    image: davismakerspace.org/dkimkeys:${TAG}
     volumes:
       - ./secrets/dkim/:/run/dkim/
     secrets:
@@ -83,7 +83,7 @@ services:
   # Certbot is used to create Let's Encrypt SSL certificates; it checks once per
   # day to see if the certificates need a renewal.
   certbot:
-    image: davismakerspace/org:certbot
+    image: davismakerspace.org/certbot:${TAG}
     environment:
       DEPLOY_DIR: /run/certs
     volumes:
@@ -119,7 +119,7 @@ services:
       - ./volumes/wordpress:/run/wordpress
     restart: always
   wordpress-php-fpm:
-    image: davismakerspace/org:php-fpm
+    image: davismakerspace.org/php-fpm:${TAG}
     read_only: true
     volumes:
       - { type: tmpfs, target: /tmp }
@@ -133,7 +133,7 @@ services:
       - wordpress.ini
     restart: always
   wordpress-mariadb:
-    image: davismakerspace/org:mariadb
+    image: davismakerspace.org/mariadb:${TAG}
     volumes:
       - net-wordpress-mariadb:/run/mysqld
       - ./volumes/wordpress-db:/var/lib/mysql
